@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>Test cookie secure attribute functionality</title>
+    <meta name=help href="https://tools.ietf.org/html/rfc6265#section-5.2.5">
+    <meta name="timeout" content="long">
+    <script src="/resources/testharness.js"></script>
+    <script src="/resources/testharnessreport.js"></script>
+  </head>
+  <body>
+    <div id=log></div>
+    <script>
+    const secureTests = [
+      {
+        cookie: "test=1; Secure; path=/",
+        expectedResponse: "test=1",
+        name: "Set cookie for Secure attribute"
+      },
+      {
+        cookie: "test=2; seCURe; path=/",
+        expectedResponse: "test=2",
+        name: "Set cookie for seCURe attribute"
+      },
+      {
+        cookie: 'test=3; "Secure"; path=/',
+        expectedResponse: "test=3",
+        name: "Set cookie for quoted Secure attribute"
+      },
+      {
+        cookie: "test=4; Secure=; path=/",
+        expectedResponse: "test=4",
+        name: "Set cookie for for Secure= attribute"
+      },
+      {
+        cookie: "test=5; Secure=aaaa; path=/",
+        expectedResponse: "test=5",
+        name: "Set cookie for Secure=aaaa"
+      },
+      {
+        cookie: "test=6; Secure qux; path=/",
+        expectedResponse: "test=6",
+        name: "Set cookie for Secure qux"
+      },
+      {
+        cookie: "test=7; Secure =aaaaa; path=/",
+        expectedResponse: "test=7",
+        name: "Set cookie for Secure space equals."
+      },
+      {
+        cookie: "test=8; Secure; qux; path=/",
+        expectedResponse: "test=8",
+        name: "Set cookie for Secure separated."
+      },
+      {
+        cookie: "test=9; Secure;qux; path=/",
+        expectedResponse: "test=9",
+        name: "Set cookie for Secure separated v2."
+      },
+      {
+        cookie: "test=10; Secure    ; qux; path=/",
+        expectedResponse: "test=10",
+        name: "Set cookie for Secure separated v3."
+      },
+      {
+        cookie: "test=11;                Secure; path=/",
+        expectedResponse: "test=11",
+        name: "Set cookie for spaced Secure"
+      },
+      {
+        cookie: "test=12;       Secure     ; path=/",
+        expectedResponse: "test=12",
+        name: "Set cookie for space Secure with ;."
+      },
+      {
+        cookie: "test=13; qux; Secure; path=/",
+        expectedResponse: "test=13",
+        name: "Set cookie for invalid + Secure."
+      },
+      {
+        cookie: 'test=14; qux="aaa;bbb"; Secure; path=/',
+        expectedResponse: "test=14",
+        name: "Set cookie for quoted invalid attribute."
+      }
+    ];
+
+    // runCookieTest sets a `cookie`, then asserts it was or was not set
+    // via `expectedValue`. Then cleans it up.
+    async function runCookieTest(cookie, expectedValue) {
+        return fetch(`/cookies/resources/cookie_attribute.py?set=${encodeURIComponent(cookie)}`).then(_ => {
+          if (Boolean(expectedValue)) {
+            assert_equals(document.cookie, expectedValue, "The cookie was set as expected.");
+          } else {
+            assert_equals(document.cookie, expectedValue, "The cookie was rejected.");
+          }
+        }).then(_ => {
+          return fetch(`/cookies/resources/cookie_attribute.py?drop=${encodeURIComponent(cookie)}`);
+        });
+    }
+
+    for (const test of secureTests) {
+        promise_test(async testCase => {
+          await runCookieTest(test.cookie, test.expectedResponse);
+        }, test.name);
+    }
+    </script>
+  </body>
+</html>

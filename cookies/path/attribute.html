@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>Test cookie path attribute functionality</title>
+    <meta name=help href="https://tools.ietf.org/html/rfc6265#section-5.2.4">
+    <meta name="timeout" content="long">
+    <script src="/resources/testharness.js"></script>
+    <script src="/resources/testharnessreport.js"></script>
+  </head>
+  <body>
+    <script>
+    const pathTests = [
+      {
+        cookie: "test=1; Path",
+        expectedResponse: "test=1",
+        name: "Set cookie for bare Path"
+      },
+      {
+        cookie: "test=2; Path=",
+        expectedResponse: "test=2",
+        name: "Set cookie for Path="
+      },
+      {
+        cookie: "test=3; Path=/",
+        expectedResponse: "test=3",
+        name: "Set cookie for Path=/"
+      },
+      {
+        cookie: "test=4; Path=/qux",
+        expectedResponse: "",
+        name: "Ignore cookie for invalid path"
+      },
+      {
+        cookie: "test=5; Path    =/qux",
+        expectedResponse: "",
+        name: "Ignore cookie for spaced invalid path"
+      },
+      {
+        cookie: "test=6; Path=    /qux",
+        expectedResponse: "",
+        name: "Ignore cookie for spaced invalid path v2"
+      },
+      {
+        cookie: "test=7; Path=/qux      ; taz",
+        expectedResponse: "",
+        name: "Ignore cookie for invalid path and attribute"
+      },
+      {
+        cookie: "test=8; Path=/qux; Path=/",
+        expectedResponse: "test=8",
+        name: "Set cookie for invalid and root path"
+      },
+      {
+        cookie: "test=9; Path=/; Path=/qux",
+        expectedResponse: "",
+        name: "Ignore cookie for root and invalid path"
+      }
+    ];
+
+    // runCookieTest sets a `cookie`, then asserts it was or was not set
+    // via `expectedValue`. Then cleans it up.
+    async function runCookieTest(cookie, expectedValue) {
+        return fetch(`./cookie.py?set=${encodeURIComponent(cookie)}`).then(_ => {
+          if (Boolean(expectedValue)) {
+            assert_equals(document.cookie, expectedValue, "The cookie was set as expected.");
+          } else {
+            assert_equals(document.cookie, expectedValue, "The cookie was rejected.");
+          }
+        }).then(_ => {
+          return fetch(`./cookie.py?drop=${encodeURIComponent(cookie)}`);
+        });
+    }
+
+    for (const test of pathTests) {
+        promise_test(async testCase => {
+          await runCookieTest(test.cookie, test.expectedResponse);
+        }, test.name);
+    }
+    </script>
+  </body>
+</html>
